@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jogo da Memória — Correção Gramatical</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --font-body:'Nunito',sans-serif;
+  --color-bg:#fdf6e3;
+  --color-surface:#fff8ee;
+  --color-primary:#e05c2a;
+  --color-primary-hover:#c04820;
+  --color-accent:#2a7be0;
+  --color-gold:#f5a623;
+  --color-success:#3aab5c;
+  --color-error:#d93025;
+  --color-text:#2d2416;
+  --color-text-muted:#7a6a50;
+  --color-border:#e8d8b8;
+  --radius-md:0.75rem;
+  --radius-lg:1.25rem;
+  --shadow-card:0 4px 18px rgba(80,40,0,0.10);
+  --transition:0.22s cubic-bezier(0.16,1,0.3,1);
+}
+
+html,body{
+  height:100%;
+  font-family:var(--font-body);
+  background:var(--color-bg);
+  color:var(--color-text);
+  overflow-x:hidden;
+}
+body{
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:0.75rem 0.75rem 2rem;
+}
+
+/* ——— HEADER ——— */
+.game-header{
+  width:100%;max-width:960px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:0.8rem;flex-wrap:wrap;gap:0.4rem;
+}
+.game-title{font-size:clamp(1.1rem,4vw,1.8rem);font-weight:900;color:var(--color-primary);line-height:1.1}
+.game-title span{color:var(--color-accent)}
+.stats{display:flex;gap:0.75rem;font-size:clamp(0.75rem,2.5vw,0.95rem);font-weight:700;color:var(--color-text-muted);flex-wrap:wrap}
+.stat{display:flex;align-items:center;gap:0.25rem}
+.stat-value{color:var(--color-text);font-size:clamp(0.85rem,2.8vw,1.05rem)}
+
+/* ——— PROGRESS ——— */
+.progress-bar-wrap{width:100%;max-width:960px;margin-bottom:0.6rem}
+.progress-label{font-size:clamp(0.7rem,2vw,0.78rem);font-weight:700;color:var(--color-text-muted);margin-bottom:0.25rem}
+.progress-bar{height:7px;background:var(--color-border);border-radius:99px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--color-success),#6ae09a);border-radius:99px;transition:width 0.5s ease;width:0%}
+
+/* ——— BOARD ——— */
+#board{
+  display:grid;
+  width:100%;max-width:960px;
+  gap:clamp(5px,1.5vw,12px);
+  /* columns set dynamically via JS */
+}
+
+/* ——— CARD ——— */
+.card{
+  aspect-ratio:3/4;
+  perspective:600px;
+  cursor:pointer;
+  min-width:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.card-inner{
+  width:100%;height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  border-radius:var(--radius-md);
+}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card.matched .card-inner{transform:rotateY(180deg)}
+.card-front,.card-back{
+  position:absolute;inset:0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;
+  padding:clamp(0.3rem,1.5vw,0.6rem);
+  box-shadow:var(--shadow-card);
+  font-family:var(--font-body);
+}
+.card-back{
+  background:linear-gradient(135deg,var(--color-primary) 0%,#c04820 100%);
+  color:#fff;
+  border:2px solid rgba(255,255,255,0.15);
+  flex-direction:column;gap:0.2rem;
+}
+.card-back-icon{font-size:clamp(1.2rem,4vw,2rem)}
+.card-back-label{font-size:clamp(0.4rem,1.2vw,0.55rem);text-transform:uppercase;letter-spacing:1px;opacity:0.7}
+.card-front{
+  background:var(--color-surface);
+  transform:rotateY(180deg);
+  border:2px solid var(--color-border);
+  text-align:center;
+  font-size:clamp(0.45rem,1.4vw,0.78rem);
+  font-weight:700;
+  color:var(--color-text);
+  line-height:1.3;
+  flex-direction:column;gap:0.3rem;
+}
+.card-front .card-num{
+  font-size:clamp(0.38rem,1vw,0.58rem);
+  font-weight:800;color:var(--color-primary);
+  letter-spacing:1px;text-transform:uppercase;opacity:0.8;
+}
+.card.matched .card-front{
+  background:linear-gradient(135deg,#e8f8ef 0%,#c8f0d8 100%);
+  border-color:var(--color-success);
+  animation:cardMatch 0.4s ease;
+}
+.card.error-anim .card-inner{animation:cardShake 0.4s ease}
+.card:active .card-inner{transform:scale(0.95)}
+.card.flipped:active .card-inner,.card.matched:active .card-inner{transform:rotateY(180deg) scale(0.98)}
+
+@keyframes cardMatch{0%{transform:rotateY(180deg) scale(0.92)}60%{transform:rotateY(180deg) scale(1.06)}100%{transform:rotateY(180deg) scale(1)}}
+@keyframes cardShake{0%,100%{transform:rotateY(180deg) translateX(0)}20%{transform:rotateY(180deg) translateX(-5px)}40%{transform:rotateY(180deg) translateX(5px)}60%{transform:rotateY(180deg) translateX(-3px)}80%{transform:rotateY(180deg) translateX(3px)}}
+
+/* ——— OVERLAY ——— */
+#overlay{
+  position:fixed;inset:0;background:rgba(30,15,0,0.6);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;
+  z-index:100;
+  opacity:0;pointer-events:none;transition:opacity 0.3s ease;
+  padding:0;
+}
+#overlay.visible{opacity:1;pointer-events:all}
+
+/* On larger screens center the modal */
+@media(min-width:600px){
+  #overlay{align-items:center;padding:1rem}
+}
+
+/* ——— MODAL ——— */
+.modal{
+  background:var(--color-surface);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  padding:clamp(1rem,4vw,2rem) clamp(1rem,4vw,2rem) clamp(1.5rem,5vw,2.5rem);
+  width:100%;max-width:560px;
+  box-shadow:0 -8px 40px rgba(80,40,0,0.2);
+  border:1px solid var(--color-border);
+  animation:slideUp 0.38s cubic-bezier(0.16,1,0.3,1);
+  max-height:92dvh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+@media(min-width:600px){
+  .modal{
+    border-radius:var(--radius-lg);
+    box-shadow:0 16px 60px rgba(80,40,0,0.25);
+    animation:modalIn 0.38s cubic-bezier(0.16,1,0.3,1);
+    max-height:90dvh;
+  }
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes modalIn{from{transform:scale(0.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+
+/* drag handle hint on mobile */
+.modal-handle{
+  width:40px;height:4px;background:var(--color-border);
+  border-radius:99px;margin:0 auto 1rem;
+  display:block;
+}
+@media(min-width:600px){.modal-handle{display:none}}
+
+.modal-icon{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:0.3rem;text-align:center}
+.modal-title{font-size:clamp(1rem,3.5vw,1.5rem);font-weight:900;color:var(--color-primary);margin-bottom:0.4rem;text-align:center;line-height:1.2}
+.wrong-phrase{
+  background:#fff3f0;border:1.5px solid #f5c6b8;
+  border-radius:var(--radius-md);
+  padding:clamp(0.6rem,2vw,0.9rem) clamp(0.7rem,2.5vw,1rem);
+  font-size:clamp(0.82rem,2.5vw,1rem);font-weight:700;
+  color:#c03010;margin-bottom:0.9rem;text-align:center;line-height:1.4;
+}
+.wrong-phrase-label{font-size:clamp(0.6rem,1.8vw,0.7rem);text-transform:uppercase;letter-spacing:1px;color:#c03010;opacity:0.7;margin-bottom:0.25rem}
+.correction-area{margin-bottom:0.8rem}
+.correction-label{font-size:clamp(0.72rem,2vw,0.82rem);font-weight:800;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem}
+.correction-input{
+  width:100%;
+  padding:clamp(0.6rem,2vw,0.75rem) clamp(0.8rem,2.5vw,1rem);
+  border:2px solid var(--color-border);
+  border-radius:var(--radius-md);
+  font-family:var(--font-body);
+  font-size:clamp(0.9rem,3vw,1rem);
+  font-weight:600;
+  background:#fff;color:var(--color-text);
+  outline:none;
+  transition:border-color var(--transition),box-shadow var(--transition);
+  /* prevent iOS zoom */
+  font-size:16px;
+}
+.correction-input:focus{border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(42,123,224,0.15)}
+.correction-input.correct{border-color:var(--color-success);background:#f0fbf4}
+.correction-input.wrong-input{border-color:var(--color-error);background:#fff5f5}
+.modal-hint{
+  font-size:clamp(0.75rem,2.2vw,0.85rem);color:var(--color-text-muted);
+  margin-bottom:0.8rem;text-align:center;
+  background:rgba(240,230,200,0.5);border-radius:0.5rem;
+  padding:0.4rem 0.8rem;line-height:1.5;
+}
+.feedback-msg{
+  margin-top:0.3rem;font-size:clamp(0.8rem,2.5vw,0.9rem);font-weight:700;
+  text-align:center;min-height:1.3em;
+}
+.feedback-msg.ok{color:var(--color-success)}
+.feedback-msg.err{color:var(--color-error)}
+.answer-reveal{
+  margin-top:0.6rem;padding:clamp(0.5rem,2vw,0.7rem) clamp(0.7rem,2vw,1rem);
+  background:#f0fbf4;border:1.5px solid #7dcf9e;
+  border-radius:var(--radius-md);
+  font-size:clamp(0.82rem,2.5vw,1rem);font-weight:700;
+  color:#1a7a3c;text-align:center;line-height:1.4;
+  display:none;
+}
+.answer-reveal.show{display:block;animation:fadeIn 0.3s ease}
+.answer-reveal-label{font-size:clamp(0.6rem,1.8vw,0.7rem);text-transform:uppercase;letter-spacing:1px;color:#1a7a3c;opacity:0.7;margin-bottom:0.2rem}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.modal-actions{display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;margin-top:0.8rem}
+.btn{
+  padding:clamp(0.6rem,2vw,0.7rem) clamp(1rem,3vw,1.4rem);
+  border-radius:var(--radius-md);
+  font-family:var(--font-body);
+  font-size:clamp(0.82rem,2.5vw,0.95rem);
+  font-weight:800;cursor:pointer;border:none;
+  transition:all var(--transition);
+  min-width:clamp(100px,30vw,130px);
+  min-height:44px;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:active{background:var(--color-primary-hover);transform:scale(0.97)}
+.btn-secondary{background:var(--color-border);color:var(--color-text-muted)}
+.btn-secondary:active{background:#d8c898;transform:scale(0.97)}
+.btn-success{background:var(--color-success);color:#fff}
+.btn-success:active{transform:scale(0.97)}
+
+/* ——— WIN SCREEN ——— */
+.win-screen{text-align:center}
+.win-stars{font-size:clamp(1.8rem,6vw,2.5rem);margin-bottom:0.4rem}
+.win-score{font-size:clamp(1rem,3.5vw,1.3rem);font-weight:900;color:var(--color-accent);margin-bottom:0.3rem}
+.win-msg{font-size:clamp(0.82rem,2.5vw,0.95rem);color:var(--color-text-muted);margin-bottom:1.2rem;line-height:1.5}
+
+/* ——— START SCREEN ——— */
+.start-screen{text-align:center}
+.start-big{font-size:clamp(1.5rem,5vw,2.5rem);font-weight:900;color:var(--color-primary);line-height:1.1;margin-bottom:0.5rem}
+.start-desc{font-size:clamp(0.82rem,2.5vw,1rem);color:var(--color-text-muted);line-height:1.6;margin-bottom:1.2rem}
+.start-rule{background:#fff3e8;border:1.5px solid #f0c890;border-radius:var(--radius-md);padding:clamp(0.7rem,2.5vw,0.9rem) clamp(0.8rem,2.5vw,1rem);margin-bottom:1rem;font-size:clamp(0.8rem,2.5vw,0.9rem);color:#a05010;font-weight:600;line-height:1.6;text-align:left}
+.start-rule strong{color:var(--color-primary)}
+
+/* ——— CONFETTI ——— */
+.confetti{position:fixed;pointer-events:none;z-index:200;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+/* ——— HINT SHAKE (after 3 wrong pair attempts) ——— */
+@keyframes hintShake{
+  0%,100%{transform:translateX(0) rotate(0deg)}
+  10%{transform:translateX(-8px) rotate(-2deg)}
+  20%{transform:translateX(8px) rotate(2deg)}
+  30%{transform:translateX(-8px) rotate(-1deg)}
+  40%{transform:translateX(8px) rotate(1deg)}
+  50%{transform:translateX(-5px) rotate(0deg)}
+  60%{transform:translateX(5px) rotate(0deg)}
+  70%{transform:translateX(-3px)}
+  80%{transform:translateX(3px)}
+  90%{transform:translateX(-1px)}
+}
+.card.hint-shake .card-inner{
+  animation:hintShake 0.7s cubic-bezier(0.36,0.07,0.19,0.97) !important;
+  animation-fill-mode:both;
+}
+</style>
+</head>
+<body>
+
+<div class="game-header">
+  <div>
+    <div class="game-title">🧩 Memória<br><span>Correção Gramatical</span></div>
+  </div>
+  <div class="stats">
+    <div class="stat">🃏 <span class="stat-value" id="movesCount">0</span> jogadas</div>
+    <div class="stat">✅ <span class="stat-value" id="pairsFound">0</span>/15</div>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-label" id="progressLabel">0 de 15 pares encontrados</div>
+  <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div id="board" aria-label="Tabuleiro do jogo da memória"></div>
+
+<div id="overlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+  </div>
+</div>
+
+<script>
+const PHRASES = [
+  { wrong:"As criança tá passando fome.", correct:"As crianças estão passando fome.", hint:"Plural: 'crianças'. Verbo concordando: 'estão'." },
+  { wrong:"Nós não tem nada pra comer hoje.", correct:"Nós não temos nada para comer hoje.", hint:"Com 'nós', o verbo 'ter' vira 'temos'. Escreva 'para' por extenso." },
+  { wrong:"Eu peguei os papel pra vender.", correct:"Eu peguei os papéis para vender.", hint:"Plural de 'papel' é 'papéis'. Escreva 'para' por extenso." },
+  { wrong:"Os homem da favela não trabalha.", correct:"Os homens da favela não trabalham.", hint:"Plural de 'homem' é 'homens'. Verbo concorda: 'trabalham'." },
+  { wrong:"Fiquei com vontade de comer pão, mas não tinha.", correct:"Fiquei com vontade de comer pão, mas não havia.", hint:"Use 'havia' (impessoal) no lugar de 'tinha' sem sujeito definido." },
+  { wrong:"A gente fomos no centro catar papel.", correct:"A gente foi ao centro catar papel.", hint:"'A gente' usa 3ª pessoa: 'foi'. Regência correta: 'ao centro'." },
+  { wrong:"As coisa tá difícil aqui na favela.", correct:"As coisas estão difíceis aqui na favela.", hint:"Plural: 'coisas', 'difíceis'. Verbo concordando: 'estão'." },
+  { wrong:"Eu não consegui arrumar comida pros meus filho.", correct:"Eu não consegui arrumar comida para os meus filhos.", hint:"Plural: 'filhos'. Escreva 'para os' por extenso." },
+  { wrong:"Os menino tava tudo com fome.", correct:"Os meninos estavam todos com fome.", hint:"Plural: 'meninos', 'todos'. Verbo: 'estavam'." },
+  { wrong:"Eu vi eles brigando por causa de comida.", correct:"Eu os vi brigando por causa de comida.", hint:"Após verbo transitivo, use pronome oblíquo: 'os vi'." },
+  { wrong:"Tem dia que nois não come nada.", correct:"Tem dia que nós não comemos nada.", hint:"'Nós' é o correto. Verbo: 'comemos'." },
+  { wrong:"Fui no mercado mas não comprei nada.", correct:"Fui ao mercado, mas não comprei nada.", hint:"'Ir ao' é a regência correta. Adicione vírgula antes de 'mas'." },
+  { wrong:"Ela falou que não vai mais me ajudar.", correct:"Ela disse que não vai mais me ajudar.", hint:"Em registro formal, prefira 'disse' a 'falou' neste contexto." },
+  { wrong:"Os vizinho fica brigando o tempo todo.", correct:"Os vizinhos ficam brigando o tempo todo.", hint:"Plural: 'vizinhos'. Verbo concordando: 'ficam'." },
+  { wrong:"Eu queria que meus filho tivesse uma vida melhor.", correct:"Eu queria que meus filhos tivessem uma vida melhor.", hint:"Plural: 'filhos'. Subjuntivo plural: 'tivessem'." }
+];
+
+let cards=[], flipped=[], matched=new Set(), moves=0, locked=false, attempts={}, pairAttempts={};
+const MAX_WRONG=2;
+
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function setGridCols(){
+  const board=document.getElementById('board');
+  const w=window.innerWidth;
+  let cols;
+  if(w<=380) cols=3;
+  else if(w<=520) cols=4;
+  else if(w<=700) cols=5;
+  else cols=6;
+  board.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+}
+
+function buildCards(){
+  let d=[];
+  PHRASES.forEach((p,i)=>{d.push({phraseIndex:i,id:i*2});d.push({phraseIndex:i,id:i*2+1})});
+  return shuffle(d);
+}
+
+function renderBoard(){
+  cards=buildCards();
+  setGridCols();
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  cards.forEach((c,idx)=>{
+    const div=document.createElement('div');
+    div.className='card';
+    div.dataset.idx=idx;
+    div.setAttribute('tabindex','0');
+    div.setAttribute('role','button');
+    div.setAttribute('aria-label',`Carta ${idx+1}`);
+    div.innerHTML=`<div class="card-inner">
+      <div class="card-back"><div class="card-back-icon">📝</div><div class="card-back-label">Virar</div></div>
+      <div class="card-front">
+        <div class="card-num">Par ${c.phraseIndex+1}</div>
+        <div>${PHRASES[c.phraseIndex].wrong}</div>
+      </div></div>`;
+    div.addEventListener('click',()=>onCardClick(idx));
+    div.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')onCardClick(idx)});
+    board.appendChild(div);
+  });
+}
+
+window.addEventListener('resize',setGridCols);
+
+function onCardClick(idx){
+  if(locked)return;
+  if(matched.has(cards[idx].phraseIndex))return;
+  if(flipped.includes(idx))return;
+  if(flipped.length>=2)return;
+  document.querySelector(`.card[data-idx="${idx}"]`).classList.add('flipped');
+  flipped.push(idx);
+  if(flipped.length===2){moves++;document.getElementById('movesCount').textContent=moves;checkPair();}
+}
+
+function checkPair(){
+  locked=true;
+  const[i,j]=flipped;
+  const pA=cards[i].phraseIndex,pB=cards[j].phraseIndex;
+  if(pA===pB){
+    setTimeout(()=>showCorrectionModal(pA,i,j),420);
+  } else {
+    // track wrong attempts per phrase pair
+    pairAttempts[pA]=(pairAttempts[pA]||0)+1;
+    pairAttempts[pB]=(pairAttempts[pB]||0)+1;
+    setTimeout(()=>{
+      const a=document.querySelector(`.card[data-idx="${i}"]`);
+      const b=document.querySelector(`.card[data-idx="${j}"]`);
+      a.classList.add('error-anim');b.classList.add('error-anim');
+      setTimeout(()=>{
+        a.classList.remove('flipped','error-anim');
+        b.classList.remove('flipped','error-anim');
+        flipped=[];locked=false;
+        // After 3 wrong flips for this pair → shake all matching cards as hint
+        if(pairAttempts[pA]>=3){
+          cards.forEach((c,idx2)=>{
+            if(c.phraseIndex===pA && !matched.has(pA)){
+              const el=document.querySelector(`.card[data-idx="${idx2}"]`);
+              el.classList.add('hint-shake');
+              setTimeout(()=>el.classList.remove('hint-shake'),800);
+            }
+          });
+          pairAttempts[pA]=0; // reset so it can trigger again later
+        }
+      },420);
+    },700);
+  }
+}
+
+function showCorrectionModal(phraseIndex,cardI,cardJ){
+  const phrase=PHRASES[phraseIndex];
+  if(!attempts[phraseIndex])attempts[phraseIndex]=0;
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="modal-handle"></div>
+    <div class="modal-icon">🎉 Par encontrado!</div>
+    <div class="modal-title">Corrija a frase para confirmar!</div>
+    <div class="wrong-phrase"><div class="wrong-phrase-label">❌ Frase com erro</div>"${phrase.wrong}"</div>
+    <div class="correction-area">
+      <div class="correction-label">✍️ Escreva a frase correta:</div>
+      <input type="text" class="correction-input" id="corrInput" placeholder="Digite a frase corrigida..." autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" inputmode="text">
+    </div>
+    <div class="modal-hint">💡 ${phrase.hint}</div>
+    <div class="feedback-msg" id="feedbackMsg"></div>
+    <div class="answer-reveal" id="answerReveal"><div class="answer-reveal-label">✅ Resposta correta</div>"${phrase.correct}"</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="checkBtn">Verificar ✔</button>
+      <button class="btn btn-secondary" id="skipBtn">Revelar 👁</button>
+    </div>`;
+  document.getElementById('checkBtn').addEventListener('click',()=>checkCorrection(phraseIndex,cardI,cardJ));
+  document.getElementById('skipBtn').addEventListener('click',()=>skipCorrection(phraseIndex,cardI,cardJ));
+  showOverlay();
+  setTimeout(()=>{
+    const inp=document.getElementById('corrInput');
+    if(inp){
+      // only auto-focus on non-touch devices to avoid keyboard jump
+      if(window.matchMedia('(hover:hover)').matches) inp.focus();
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')checkCorrection(phraseIndex,cardI,cardJ)});
+    }
+  },150);
+}
+
+function normalize(s){
+  return s.trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+function checkCorrection(phraseIndex,cardI,cardJ){
+  const inp=document.getElementById('corrInput');
+  const fb=document.getElementById('feedbackMsg');
+  const ar=document.getElementById('answerReveal');
+  const phrase=PHRASES[phraseIndex];
+  if(!inp.value.trim()){fb.textContent='Digite a frase antes de verificar!';fb.className='feedback-msg err';return;}
+  const uN=normalize(inp.value).replace(/[.,!?;:]/g,'');
+  const cN=normalize(phrase.correct).replace(/[.,!?;:]/g,'');
+  if(uN===cN){
+    inp.className='correction-input correct';
+    fb.textContent='✅ Parabéns! Correção perfeita!';fb.className='feedback-msg ok';
+    setTimeout(()=>confirmMatch(phraseIndex,cardI,cardJ),900);
+  } else {
+    attempts[phraseIndex]=(attempts[phraseIndex]||0)+1;
+    inp.className='correction-input wrong-input';
+    if(attempts[phraseIndex]>=MAX_WRONG){
+      fb.textContent='❌ Quase! Veja a resposta abaixo.';fb.className='feedback-msg err';
+      ar.classList.add('show');
+    } else {
+      const left=MAX_WRONG-attempts[phraseIndex];
+      fb.textContent=`❌ Não está certo. ${left} tentativa${left>1?'s':''} restante.`;fb.className='feedback-msg err';
+      setTimeout(()=>{inp.className='correction-input';inp.value='';inp.focus();},1100);
+    }
+  }
+}
+
+function skipCorrection(phraseIndex,cardI,cardJ){
+  document.getElementById('answerReveal').classList.add('show');
+  document.querySelector('.modal-actions').innerHTML=
+    `<button class="btn btn-success" id="contBtn">Entendi, continuar ▶</button>`;
+  document.getElementById('contBtn').addEventListener('click',()=>confirmMatch(phraseIndex,cardI,cardJ));
+}
+
+function confirmMatch(phraseIndex,cardI,cardJ){
+  matched.add(phraseIndex);flipped=[];locked=false;
+  hideOverlay();
+  document.querySelector(`.card[data-idx="${cardI}"]`).classList.add('matched');
+  document.querySelector(`.card[data-idx="${cardJ}"]`).classList.add('matched');
+  updateProgress();
+  if(matched.size===PHRASES.length){setTimeout(()=>showWinScreen(),500);launchConfetti();}
+}
+
+function updateProgress(){
+  const count=matched.size,total=PHRASES.length;
+  document.getElementById('pairsFound').textContent=count;
+  document.getElementById('progressFill').style.width=(count/total*100)+'%';
+  document.getElementById('progressLabel').textContent=`${count} de ${total} pares encontrados`;
+}
+
+function showWinScreen(){
+  const stars=moves<=20?'⭐⭐⭐':moves<=30?'⭐⭐':'⭐';
+  document.getElementById('modal').innerHTML=`<div class="modal-handle"></div>
+    <div class="win-screen">
+      <div class="win-stars">${stars}</div>
+      <div class="modal-title">Parabéns! 🏆</div>
+      <div class="win-score">Você completou em ${moves} jogadas!</div>
+      <div class="win-msg">Você praticou a correção gramatical de 15 frases. Continue evoluindo! 📚</div>
+      <div class="modal-actions"><button class="btn btn-primary" id="restartBtn">🔄 Jogar novamente</button></div>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click',restartGame);
+  showOverlay();
+}
+
+function restartGame(){
+  matched=new Set();flipped=[];moves=0;locked=false;attempts={};pairAttempts={};
+  document.getElementById('movesCount').textContent='0';
+  document.getElementById('pairsFound').textContent='0';
+  document.getElementById('progressFill').style.width='0%';
+  document.getElementById('progressLabel').textContent='0 de 15 pares encontrados';
+  hideOverlay();renderBoard();
+}
+
+function launchConfetti(){
+  const emojis=['🎉','🎊','⭐','✨','🌟','📝','✅','🏆'];
+  for(let i=0;i<28;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div');el.className='confetti';
+      el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+      el.style.cssText=`left:${Math.random()*100}vw;font-size:${1+Math.random()*1}rem;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.4}s`;
+      document.body.appendChild(el);setTimeout(()=>el.remove(),4000);
+    },i*55);
+  }
+}
+
+function showOverlay(){document.getElementById('overlay').classList.add('visible')}
+function hideOverlay(){document.getElementById('overlay').classList.remove('visible')}
+
+function showStartScreen(){
+  document.getElementById('modal').innerHTML=`<div class="modal-handle"></div>
+    <div class="start-screen">
+      <div class="start-big">🧩 Jogo da Memória<br>Gramática</div>
+      <div class="start-desc">Encontre os pares de cartas iguais e corrija o erro gramatical da frase para confirmar o ponto!</div>
+      <div class="start-rule">
+        <strong>Como jogar:</strong><br>
+        1. Toque em duas cartas para virá-las.<br>
+        2. Par encontrado 🎉? Corrija a frase errada.<br>
+        3. Acertou → par confirmado ✅<br>
+        4. Errou ${MAX_WRONG}x → resposta revelada automaticamente.
+      </div>
+      <div class="modal-actions"><button class="btn btn-primary" id="startBtn">▶ Iniciar Jogo</button></div>
+    </div>`;
+  document.getElementById('startBtn').addEventListener('click',()=>{hideOverlay();renderBoard();});
+  showOverlay();
+}
+
+renderBoard();
+showStartScreen();
+</script>
+</body>
+</html>
