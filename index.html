@@ -1,573 +1,1273 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Jogo da Memória — Correção Gramatical</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --font-body:'Nunito',sans-serif;
-  --color-bg:#fdf6e3;
-  --color-surface:#fff8ee;
-  --color-primary:#e05c2a;
-  --color-primary-hover:#c04820;
-  --color-accent:#2a7be0;
-  --color-gold:#f5a623;
-  --color-success:#3aab5c;
-  --color-error:#d93025;
-  --color-text:#2d2416;
-  --color-text-muted:#7a6a50;
-  --color-border:#e8d8b8;
-  --radius-md:0.75rem;
-  --radius-lg:1.25rem;
-  --shadow-card:0 4px 18px rgba(80,40,0,0.10);
-  --transition:0.22s cubic-bezier(0.16,1,0.3,1);
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Certo ou Errado?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f3f7ff;
+      --bg-soft: #eaf1ff;
+      --surface: #ffffff;
+      --surface-2: #f7faff;
+      --text: #1e2a44;
+      --muted: #6d7a9e;
+      --border: #d7e2f7;
+      --ok: #24b36b;
+      --bad: #e65464;
+      --accent: #4f8df7;
+      --accent-2: #68a0ff;
+      --shadow: 0 10px 28px rgba(43, 78, 140, 0.12);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --spring: cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
 
-html,body{
-  height:100%;
-  font-family:var(--font-body);
-  background:var(--color-bg);
-  color:var(--color-text);
-  overflow-x:hidden;
-}
-body{
-  min-height:100dvh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:0.75rem 0.75rem 2rem;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* ——— HEADER ——— */
-.game-header{
-  width:100%;max-width:960px;
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:0.8rem;flex-wrap:wrap;gap:0.4rem;
-}
-.game-title{font-size:clamp(1.1rem,4vw,1.8rem);font-weight:900;color:var(--color-primary);line-height:1.1}
-.game-title span{color:var(--color-accent)}
-.stats{display:flex;gap:0.75rem;font-size:clamp(0.75rem,2.5vw,0.95rem);font-weight:700;color:var(--color-text-muted);flex-wrap:wrap}
-.stat{display:flex;align-items:center;gap:0.25rem}
-.stat-value{color:var(--color-text);font-size:clamp(0.85rem,2.8vw,1.05rem)}
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: radial-gradient(circle at 20% -20%, #dce9ff, transparent 46%),
+                  radial-gradient(circle at 110% 0%, #e9e0ff, transparent 42%),
+                  var(--bg);
+      color: var(--text);
+      font-family: "Manrope", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
 
-/* ——— PROGRESS ——— */
-.progress-bar-wrap{width:100%;max-width:960px;margin-bottom:0.6rem}
-.progress-label{font-size:clamp(0.7rem,2vw,0.78rem);font-weight:700;color:var(--color-text-muted);margin-bottom:0.25rem}
-.progress-bar{height:7px;background:var(--color-border);border-radius:99px;overflow:hidden}
-.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--color-success),#6ae09a);border-radius:99px;transition:width 0.5s ease;width:0%}
+    body {
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) 14px calc(14px + env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: center;
+    }
 
-/* ——— BOARD ——— */
-#board{
-  display:grid;
-  width:100%;max-width:960px;
-  gap:clamp(5px,1.5vw,12px);
-  /* columns set dynamically via JS */
-}
+    .app {
+      width: min(100%, 980px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-/* ——— CARD ——— */
-.card{
-  aspect-ratio:3/4;
-  perspective:600px;
-  cursor:pointer;
-  min-width:0;
-  -webkit-tap-highlight-color:transparent;
-}
-.card-inner{
-  width:100%;height:100%;
-  position:relative;
-  transform-style:preserve-3d;
-  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
-  border-radius:var(--radius-md);
-}
-.card.flipped .card-inner{transform:rotateY(180deg)}
-.card.matched .card-inner{transform:rotateY(180deg)}
-.card-front,.card-back{
-  position:absolute;inset:0;
-  backface-visibility:hidden;
-  -webkit-backface-visibility:hidden;
-  border-radius:var(--radius-md);
-  display:flex;align-items:center;justify-content:center;
-  padding:clamp(0.3rem,1.5vw,0.6rem);
-  box-shadow:var(--shadow-card);
-  font-family:var(--font-body);
-}
-.card-back{
-  background:linear-gradient(135deg,var(--color-primary) 0%,#c04820 100%);
-  color:#fff;
-  border:2px solid rgba(255,255,255,0.15);
-  flex-direction:column;gap:0.2rem;
-}
-.card-back-icon{font-size:clamp(1.2rem,4vw,2rem)}
-.card-back-label{font-size:clamp(0.4rem,1.2vw,0.55rem);text-transform:uppercase;letter-spacing:1px;opacity:0.7}
-.card-front{
-  background:var(--color-surface);
-  transform:rotateY(180deg);
-  border:2px solid var(--color-border);
-  text-align:center;
-  font-size:clamp(0.45rem,1.4vw,0.78rem);
-  font-weight:700;
-  color:var(--color-text);
-  line-height:1.3;
-  flex-direction:column;gap:0.3rem;
-}
-.card-front .card-num{
-  font-size:clamp(0.38rem,1vw,0.58rem);
-  font-weight:800;color:var(--color-primary);
-  letter-spacing:1px;text-transform:uppercase;opacity:0.8;
-}
-.card.matched .card-front{
-  background:linear-gradient(135deg,#e8f8ef 0%,#c8f0d8 100%);
-  border-color:var(--color-success);
-  animation:cardMatch 0.4s ease;
-}
-.card.error-anim .card-inner{animation:cardShake 0.4s ease}
-.card:active .card-inner{transform:scale(0.95)}
-.card.flipped:active .card-inner,.card.matched:active .card-inner{transform:rotateY(180deg) scale(0.98)}
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      backdrop-filter: blur(4px);
+    }
 
-@keyframes cardMatch{0%{transform:rotateY(180deg) scale(0.92)}60%{transform:rotateY(180deg) scale(1.06)}100%{transform:rotateY(180deg) scale(1)}}
-@keyframes cardShake{0%,100%{transform:rotateY(180deg) translateX(0)}20%{transform:rotateY(180deg) translateX(-5px)}40%{transform:rotateY(180deg) translateX(5px)}60%{transform:rotateY(180deg) translateX(-3px)}80%{transform:rotateY(180deg) translateX(3px)}}
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
 
-/* ——— OVERLAY ——— */
-#overlay{
-  position:fixed;inset:0;background:rgba(30,15,0,0.6);
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-  display:flex;align-items:flex-end;justify-content:center;
-  z-index:100;
-  opacity:0;pointer-events:none;transition:opacity 0.3s ease;
-  padding:0;
-}
-#overlay.visible{opacity:1;pointer-events:all}
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, #2f66cf, #4f8df7);
+      box-shadow: none;
+      flex-shrink: 0;
+      font-weight: 800;
+    }
 
-/* On larger screens center the modal */
-@media(min-width:600px){
-  #overlay{align-items:center;padding:1rem}
-}
+    .brand h1 {
+      font-size: clamp(1rem, 3.5vw, 1.2rem);
+      line-height: 1;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-/* ——— MODAL ——— */
-.modal{
-  background:var(--color-surface);
-  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-  padding:clamp(1rem,4vw,2rem) clamp(1rem,4vw,2rem) clamp(1.5rem,5vw,2.5rem);
-  width:100%;max-width:560px;
-  box-shadow:0 -8px 40px rgba(80,40,0,0.2);
-  border:1px solid var(--color-border);
-  animation:slideUp 0.38s cubic-bezier(0.16,1,0.3,1);
-  max-height:92dvh;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-}
-@media(min-width:600px){
-  .modal{
-    border-radius:var(--radius-lg);
-    box-shadow:0 16px 60px rgba(80,40,0,0.25);
-    animation:modalIn 0.38s cubic-bezier(0.16,1,0.3,1);
-    max-height:90dvh;
-  }
-}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes modalIn{from{transform:scale(0.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+    .score {
+      font-weight: 800;
+      font-size: clamp(0.85rem, 3vw, 1rem);
+      color: #0f6f42;
+      background: #e7f9ef;
+      border: 1px solid #bdeacf;
+      border-radius: 999px;
+      padding: 8px 12px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
 
-/* drag handle hint on mobile */
-.modal-handle{
-  width:40px;height:4px;background:var(--color-border);
-  border-radius:99px;margin:0 auto 1rem;
-  display:block;
-}
-@media(min-width:600px){.modal-handle{display:none}}
+    .score-val.bump {
+      animation: bump 260ms var(--spring);
+    }
 
-.modal-icon{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:0.3rem;text-align:center}
-.modal-title{font-size:clamp(1rem,3.5vw,1.5rem);font-weight:900;color:var(--color-primary);margin-bottom:0.4rem;text-align:center;line-height:1.2}
-.wrong-phrase{
-  background:#fff3f0;border:1.5px solid #f5c6b8;
-  border-radius:var(--radius-md);
-  padding:clamp(0.6rem,2vw,0.9rem) clamp(0.7rem,2.5vw,1rem);
-  font-size:clamp(0.82rem,2.5vw,1rem);font-weight:700;
-  color:#c03010;margin-bottom:0.9rem;text-align:center;line-height:1.4;
-}
-.wrong-phrase-label{font-size:clamp(0.6rem,1.8vw,0.7rem);text-transform:uppercase;letter-spacing:1px;color:#c03010;opacity:0.7;margin-bottom:0.25rem}
-.correction-area{margin-bottom:0.8rem}
-.correction-label{font-size:clamp(0.72rem,2vw,0.82rem);font-weight:800;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem}
-.correction-input{
-  width:100%;
-  padding:clamp(0.6rem,2vw,0.75rem) clamp(0.8rem,2.5vw,1rem);
-  border:2px solid var(--color-border);
-  border-radius:var(--radius-md);
-  font-family:var(--font-body);
-  font-size:clamp(0.9rem,3vw,1rem);
-  font-weight:600;
-  background:#fff;color:var(--color-text);
-  outline:none;
-  transition:border-color var(--transition),box-shadow var(--transition);
-  /* prevent iOS zoom */
-  font-size:16px;
-}
-.correction-input:focus{border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(42,123,224,0.15)}
-.correction-input.correct{border-color:var(--color-success);background:#f0fbf4}
-.correction-input.wrong-input{border-color:var(--color-error);background:#fff5f5}
-.modal-hint{
-  font-size:clamp(0.75rem,2.2vw,0.85rem);color:var(--color-text-muted);
-  margin-bottom:0.8rem;text-align:center;
-  background:rgba(240,230,200,0.5);border-radius:0.5rem;
-  padding:0.4rem 0.8rem;line-height:1.5;
-}
-.feedback-msg{
-  margin-top:0.3rem;font-size:clamp(0.8rem,2.5vw,0.9rem);font-weight:700;
-  text-align:center;min-height:1.3em;
-}
-.feedback-msg.ok{color:var(--color-success)}
-.feedback-msg.err{color:var(--color-error)}
-.answer-reveal{
-  margin-top:0.6rem;padding:clamp(0.5rem,2vw,0.7rem) clamp(0.7rem,2vw,1rem);
-  background:#f0fbf4;border:1.5px solid #7dcf9e;
-  border-radius:var(--radius-md);
-  font-size:clamp(0.82rem,2.5vw,1rem);font-weight:700;
-  color:#1a7a3c;text-align:center;line-height:1.4;
-  display:none;
-}
-.answer-reveal.show{display:block;animation:fadeIn 0.3s ease}
-.answer-reveal-label{font-size:clamp(0.6rem,1.8vw,0.7rem);text-transform:uppercase;letter-spacing:1px;color:#1a7a3c;opacity:0.7;margin-bottom:0.2rem}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes bump {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.22); }
+      100% { transform: scale(1); }
+    }
 
-.modal-actions{display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;margin-top:0.8rem}
-.btn{
-  padding:clamp(0.6rem,2vw,0.7rem) clamp(1rem,3vw,1.4rem);
-  border-radius:var(--radius-md);
-  font-family:var(--font-body);
-  font-size:clamp(0.82rem,2.5vw,0.95rem);
-  font-weight:800;cursor:pointer;border:none;
-  transition:all var(--transition);
-  min-width:clamp(100px,30vw,130px);
-  min-height:44px;
-  -webkit-tap-highlight-color:transparent;
-}
-.btn-primary{background:var(--color-primary);color:#fff}
-.btn-primary:active{background:var(--color-primary-hover);transform:scale(0.97)}
-.btn-secondary{background:var(--color-border);color:var(--color-text-muted)}
-.btn-secondary:active{background:#d8c898;transform:scale(0.97)}
-.btn-success{background:var(--color-success);color:#fff}
-.btn-success:active{transform:scale(0.97)}
+    .hud {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      backdrop-filter: blur(5px);
+    }
 
-/* ——— WIN SCREEN ——— */
-.win-screen{text-align:center}
-.win-stars{font-size:clamp(1.8rem,6vw,2.5rem);margin-bottom:0.4rem}
-.win-score{font-size:clamp(1rem,3.5vw,1.3rem);font-weight:900;color:var(--color-accent);margin-bottom:0.3rem}
-.win-msg{font-size:clamp(0.82rem,2.5vw,0.95rem);color:var(--color-text-muted);margin-bottom:1.2rem;line-height:1.5}
+    .hud-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
 
-/* ——— START SCREEN ——— */
-.start-screen{text-align:center}
-.start-big{font-size:clamp(1.5rem,5vw,2.5rem);font-weight:900;color:var(--color-primary);line-height:1.1;margin-bottom:0.5rem}
-.start-desc{font-size:clamp(0.82rem,2.5vw,1rem);color:var(--color-text-muted);line-height:1.6;margin-bottom:1.2rem}
-.start-rule{background:#fff3e8;border:1.5px solid #f0c890;border-radius:var(--radius-md);padding:clamp(0.7rem,2.5vw,0.9rem) clamp(0.8rem,2.5vw,1rem);margin-bottom:1rem;font-size:clamp(0.8rem,2.5vw,0.9rem);color:#a05010;font-weight:600;line-height:1.6;text-align:left}
-.start-rule strong{color:var(--color-primary)}
+    .streak {
+      color: #e58b2d;
+      min-height: 1.1em;
+    }
 
-/* ——— CONFETTI ——— */
-.confetti{position:fixed;pointer-events:none;z-index:200;animation:fall linear forwards}
-@keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+    .bar {
+      width: 100%;
+      height: 7px;
+      background: #edf2fe;
+      border: 1px solid #d8e3fb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
 
-/* ——— HINT SHAKE (after 3 wrong pair attempts) ——— */
-@keyframes hintShake{
-  0%,100%{transform:translateX(0) rotate(0deg)}
-  10%{transform:translateX(-8px) rotate(-2deg)}
-  20%{transform:translateX(8px) rotate(2deg)}
-  30%{transform:translateX(-8px) rotate(-1deg)}
-  40%{transform:translateX(8px) rotate(1deg)}
-  50%{transform:translateX(-5px) rotate(0deg)}
-  60%{transform:translateX(5px) rotate(0deg)}
-  70%{transform:translateX(-3px)}
-  80%{transform:translateX(3px)}
-  90%{transform:translateX(-1px)}
-}
-.card.hint-shake .card-inner{
-  animation:hintShake 0.7s cubic-bezier(0.36,0.07,0.19,0.97) !important;
-  animation-fill-mode:both;
-}
-</style>
+    .bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #4f8df7, #67a0ff);
+      border-radius: 999px;
+      transition: width 380ms ease;
+    }
+
+    .arena {
+      flex: 1;
+      min-height: 56vh;
+      display: grid;
+      place-items: center;
+      position: relative;
+      isolation: isolate;
+      padding: 8px 4px;
+    }
+
+    .hint-arrows {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 1;
+    }
+
+    .hint-arrows.show { opacity: 1; }
+
+    .hint-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.88);
+      font-weight: 800;
+    }
+
+    .card-stack {
+      width: min(100%, 520px);
+      position: relative;
+      z-index: 2;
+    }
+
+    .card {
+      position: relative;
+      min-height: clamp(260px, 57vh, 420px);
+      border-radius: var(--radius);
+      padding: clamp(18px, 5vw, 28px);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff, #f7faff);
+      box-shadow: var(--shadow);
+      user-select: none;
+      touch-action: pan-y;
+      transform: translateX(0) rotate(0);
+      transition: transform 260ms var(--spring), box-shadow 260ms ease, opacity 260ms ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79, 141, 247, 0.1), transparent 72%);
+      top: -70px;
+      right: -50px;
+      pointer-events: none;
+    }
+
+    .card.ok-tilt {
+      box-shadow: 0 20px 34px rgba(36, 179, 107, 0.2);
+    }
+
+    .card.bad-tilt {
+      box-shadow: 0 20px 34px rgba(230, 84, 100, 0.2);
+    }
+
+    .tag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .chip {
+      background: #eef4ff;
+      border: 1px solid #d4e2ff;
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: #4f6fa7;
+      font-size: 0.68rem;
+    }
+
+    .phrase {
+      font-size: clamp(1.15rem, 4.3vw, 1.75rem);
+      line-height: 1.42;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .direction {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #7e8fb8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .badge {
+      position: absolute;
+      top: 14px;
+      border: 1px solid currentColor;
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      opacity: 0;
+      transition: opacity 180ms ease;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(255, 255, 255, 0.86);
+    }
+
+    .badge-left {
+      left: 12px;
+      color: var(--bad);
+      transform: rotate(-10deg);
+    }
+
+    .badge-right {
+      right: 12px;
+      color: var(--ok);
+      transform: rotate(10deg);
+    }
+
+    .card.show-left .badge-left,
+    .card.show-right .badge-right {
+      opacity: 1;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 14px;
+      min-height: 52px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 140ms var(--spring), filter 220ms ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-bad {
+      color: #b52c43;
+      background: #fff1f3;
+      border-color: #f6c9d1;
+    }
+
+    .btn-ok {
+      color: #0f6a3f;
+      background: #d6f2e1;
+      border-color: #9fd8ba;
+    }
+
+    .flash {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      z-index: 110;
+    }
+
+    .flash-icon {
+      font-size: clamp(3.6rem, 16vw, 6.4rem);
+      opacity: 0;
+      transform: scale(0.5);
+    }
+
+    .flash-icon.ok { animation: flashOk 620ms var(--spring); }
+    .flash-icon.bad { animation: flashBad 620ms var(--spring); }
+
+    @keyframes flashOk {
+      0% { opacity: 0; transform: scale(0.5); }
+      35% { opacity: 1; transform: scale(1.16); }
+      100% { opacity: 0; transform: scale(0.88); }
+    }
+
+    @keyframes flashBad {
+      0% { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+      35% { opacity: 1; transform: scale(1.12) rotate(6deg); }
+      100% { opacity: 0; transform: scale(0.88) rotate(0); }
+    }
+
+    .sheet-wrap {
+      position: fixed;
+      inset: 0;
+      background: rgba(34, 52, 86, 0.2);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+      z-index: 140;
+    }
+
+    .sheet-wrap.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sheet {
+      width: min(100%, 620px);
+      max-height: 92dvh;
+      overflow: auto;
+      border-top-left-radius: 22px;
+      border-top-right-radius: 22px;
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      padding: 12px 14px 20px;
+      background: #ffffff;
+      transform: translateY(100%);
+      transition: transform 340ms var(--spring);
+      box-shadow: 0 -10px 30px rgba(45, 74, 126, 0.2);
+    }
+
+    .sheet-wrap.open .sheet {
+      transform: translateY(0);
+    }
+
+    .handle {
+      width: 46px;
+      height: 5px;
+      background: #ccd8f3;
+      border-radius: 999px;
+      margin: 4px auto 12px;
+    }
+
+    .sheet h2 {
+      text-align: center;
+      font-size: clamp(1rem, 3.8vw, 1.3rem);
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .sheet .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.87rem;
+      line-height: 1.5;
+      margin-bottom: 11px;
+    }
+
+    .wrong-box {
+      border: 1px solid #f5c9d1;
+      background: #fff4f6;
+      color: #923044;
+      border-radius: 13px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .wrong-box small {
+      display: block;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      color: #ce5570;
+      font-weight: 800;
+    }
+
+    .hint {
+      border: 1px solid #c9dcff;
+      background: #f1f7ff;
+      color: #34548a;
+      border-radius: 12px;
+      padding: 10px;
+      line-height: 1.4;
+      font-size: 0.84rem;
+      margin-bottom: 10px;
+    }
+
+    .label {
+      display: block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 800;
+    }
+
+    .input {
+      width: 100%;
+      border-radius: 12px;
+      border: 2px solid #ccdaf8;
+      background: #ffffff;
+      color: var(--text);
+      min-height: 48px;
+      padding: 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 600;
+      outline: 0;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .input:focus {
+      border-color: #5f93f4;
+      box-shadow: 0 0 0 4px rgba(95, 147, 244, 0.18);
+    }
+
+    .input.good { border-color: var(--ok); background: #eefcf4; }
+    .input.bad { border-color: var(--bad); background: #fff2f3; }
+
+    .feedback {
+      min-height: 1.25em;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .feedback.ok { color: var(--ok); }
+    .feedback.err { color: #ff9aa8; }
+
+    .answer {
+      margin-top: 10px;
+      border: 1px solid #b8e8cf;
+      background: #edfdf4;
+      color: #1c754a;
+      border-radius: 12px;
+      padding: 10px;
+      font-weight: 700;
+      line-height: 1.45;
+      display: none;
+    }
+
+    .answer.show { display: block; }
+
+    .answer small {
+      display: block;
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      color: #2ca567;
+      font-weight: 800;
+    }
+
+    .sheet-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-sheet {
+      min-height: 48px;
+      border-radius: 12px;
+      font-weight: 800;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .btn-check {
+      background: #d6f2e1;
+      border-color: #9fd8ba;
+      color: #0c5131;
+    }
+
+    .btn-reveal {
+      background: #f1f5ff;
+      border-color: #c9d9ff;
+      color: #4268a8;
+    }
+
+    .btn-next {
+      margin-top: 10px;
+      width: 100%;
+      min-height: 48px;
+      border-radius: 12px;
+      border: 1px solid #2f66cf;
+      background: #2f66cf;
+      color: #f7fbff;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: none;
+    }
+
+    .btn-next.show { display: block; }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 30% -20%, #d9e8ff, transparent 48%),
+                  radial-gradient(circle at 120% 0%, #efe4ff, transparent 46%),
+                  var(--bg);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      transition: opacity 300ms ease;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .panel {
+      width: min(100%, 460px);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .panel .icon {
+      font-size: clamp(2rem, 8vw, 3rem);
+      margin-bottom: 10px;
+    }
+
+    .panel h2 {
+      font-size: clamp(1.3rem, 5.5vw, 2rem);
+      line-height: 1.1;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .panel p {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+      margin-bottom: 13px;
+    }
+
+    .rules {
+      text-align: left;
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .rule-item {
+      border: 1px solid #d7e3fb;
+      border-radius: 12px;
+      padding: 10px;
+      background: #f7faff;
+      color: #2b3f69;
+      font-size: 0.86rem;
+      line-height: 1.4;
+      font-weight: 600;
+    }
+
+    .start-btn,
+    .restart-btn {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 14px;
+      border: 0;
+      background: #2f66cf;
+      color: #f6faff;
+      font-size: 0.97rem;
+      font-weight: 900;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 160ms var(--spring);
+    }
+
+    .start-btn:active,
+    .restart-btn:active { transform: scale(0.98); }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 13px 0 14px;
+    }
+
+    .res {
+      border-radius: 12px;
+      border: 1px solid #d5e2fb;
+      background: #f7faff;
+      padding: 10px 6px;
+    }
+
+    .res strong {
+      display: block;
+      font-size: clamp(1.1rem, 4.8vw, 1.6rem);
+      font-weight: 900;
+      margin-bottom: 3px;
+    }
+
+    .res span {
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .res.g strong { color: var(--ok); }
+    .res.r strong { color: var(--bad); }
+    .res.y strong { color: #ffd260; }
+
+    @media (min-width: 740px) {
+      body { padding: 20px; }
+      .app { gap: 14px; }
+      .sheet-wrap { align-items: center; }
+      .sheet {
+        border-radius: 20px;
+        border-bottom: 1px solid var(--border);
+        max-height: min(86dvh, 680px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<div class="game-header">
-  <div>
-    <div class="game-title">🧩 Memória<br><span>Correção Gramatical</span></div>
-  </div>
-  <div class="stats">
-    <div class="stat">🃏 <span class="stat-value" id="movesCount">0</span> jogadas</div>
-    <div class="stat">✅ <span class="stat-value" id="pairsFound">0</span>/15</div>
-  </div>
-</div>
-
-<div class="progress-bar-wrap">
-  <div class="progress-label" id="progressLabel">0 de 15 pares encontrados</div>
-  <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
-</div>
-
-<div id="board" aria-label="Tabuleiro do jogo da memória"></div>
-
-<div id="overlay" role="dialog" aria-modal="true">
-  <div class="modal" id="modal">
-    <div class="modal-handle"></div>
-  </div>
-</div>
-
-<script>
-const PHRASES = [
-  { wrong:"As criança tá passando fome.", correct:"As crianças estão passando fome.", hint:"Plural: 'crianças'. Verbo concordando: 'estão'." },
-  { wrong:"Nós não tem nada pra comer hoje.", correct:"Nós não temos nada para comer hoje.", hint:"Com 'nós', o verbo 'ter' vira 'temos'. Escreva 'para' por extenso." },
-  { wrong:"Eu peguei os papel pra vender.", correct:"Eu peguei os papéis para vender.", hint:"Plural de 'papel' é 'papéis'. Escreva 'para' por extenso." },
-  { wrong:"Os homem da favela não trabalha.", correct:"Os homens da favela não trabalham.", hint:"Plural de 'homem' é 'homens'. Verbo concorda: 'trabalham'." },
-  { wrong:"Fiquei com vontade de comer pão, mas não tinha.", correct:"Fiquei com vontade de comer pão, mas não havia.", hint:"Use 'havia' (impessoal) no lugar de 'tinha' sem sujeito definido." },
-  { wrong:"A gente fomos no centro catar papel.", correct:"A gente foi ao centro catar papel.", hint:"'A gente' usa 3ª pessoa: 'foi'. Regência correta: 'ao centro'." },
-  { wrong:"As coisa tá difícil aqui na favela.", correct:"As coisas estão difíceis aqui na favela.", hint:"Plural: 'coisas', 'difíceis'. Verbo concordando: 'estão'." },
-  { wrong:"Eu não consegui arrumar comida pros meus filho.", correct:"Eu não consegui arrumar comida para os meus filhos.", hint:"Plural: 'filhos'. Escreva 'para os' por extenso." },
-  { wrong:"Os menino tava tudo com fome.", correct:"Os meninos estavam todos com fome.", hint:"Plural: 'meninos', 'todos'. Verbo: 'estavam'." },
-  { wrong:"Eu vi eles brigando por causa de comida.", correct:"Eu os vi brigando por causa de comida.", hint:"Após verbo transitivo, use pronome oblíquo: 'os vi'." },
-  { wrong:"Tem dia que nois não come nada.", correct:"Tem dia que nós não comemos nada.", hint:"'Nós' é o correto. Verbo: 'comemos'." },
-  { wrong:"Fui no mercado mas não comprei nada.", correct:"Fui ao mercado, mas não comprei nada.", hint:"'Ir ao' é a regência correta. Adicione vírgula antes de 'mas'." },
-  { wrong:"Ela falou que não vai mais me ajudar.", correct:"Ela disse que não vai mais me ajudar.", hint:"Em registro formal, prefira 'disse' a 'falou' neste contexto." },
-  { wrong:"Os vizinho fica brigando o tempo todo.", correct:"Os vizinhos ficam brigando o tempo todo.", hint:"Plural: 'vizinhos'. Verbo concordando: 'ficam'." },
-  { wrong:"Eu queria que meus filho tivesse uma vida melhor.", correct:"Eu queria que meus filhos tivessem uma vida melhor.", hint:"Plural: 'filhos'. Subjuntivo plural: 'tivessem'." }
-];
-
-let cards=[], flipped=[], matched=new Set(), moves=0, locked=false, attempts={}, pairAttempts={};
-const MAX_WRONG=2;
-
-function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
-
-function setGridCols(){
-  const board=document.getElementById('board');
-  const w=window.innerWidth;
-  let cols;
-  if(w<=380) cols=3;
-  else if(w<=520) cols=4;
-  else if(w<=700) cols=5;
-  else cols=6;
-  board.style.gridTemplateColumns=`repeat(${cols},1fr)`;
-}
-
-function buildCards(){
-  let d=[];
-  PHRASES.forEach((p,i)=>{d.push({phraseIndex:i,id:i*2});d.push({phraseIndex:i,id:i*2+1})});
-  return shuffle(d);
-}
-
-function renderBoard(){
-  cards=buildCards();
-  setGridCols();
-  const board=document.getElementById('board');
-  board.innerHTML='';
-  cards.forEach((c,idx)=>{
-    const div=document.createElement('div');
-    div.className='card';
-    div.dataset.idx=idx;
-    div.setAttribute('tabindex','0');
-    div.setAttribute('role','button');
-    div.setAttribute('aria-label',`Carta ${idx+1}`);
-    div.innerHTML=`<div class="card-inner">
-      <div class="card-back"><div class="card-back-icon">📝</div><div class="card-back-label">Virar</div></div>
-      <div class="card-front">
-        <div class="card-num">Par ${c.phraseIndex+1}</div>
-        <div>${PHRASES[c.phraseIndex].wrong}</div>
-      </div></div>`;
-    div.addEventListener('click',()=>onCardClick(idx));
-    div.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')onCardClick(idx)});
-    board.appendChild(div);
-  });
-}
-
-window.addEventListener('resize',setGridCols);
-
-function onCardClick(idx){
-  if(locked)return;
-  if(matched.has(cards[idx].phraseIndex))return;
-  if(flipped.includes(idx))return;
-  if(flipped.length>=2)return;
-  document.querySelector(`.card[data-idx="${idx}"]`).classList.add('flipped');
-  flipped.push(idx);
-  if(flipped.length===2){moves++;document.getElementById('movesCount').textContent=moves;checkPair();}
-}
-
-function checkPair(){
-  locked=true;
-  const[i,j]=flipped;
-  const pA=cards[i].phraseIndex,pB=cards[j].phraseIndex;
-  if(pA===pB){
-    setTimeout(()=>showCorrectionModal(pA,i,j),420);
-  } else {
-    // track wrong attempts per phrase pair
-    pairAttempts[pA]=(pairAttempts[pA]||0)+1;
-    pairAttempts[pB]=(pairAttempts[pB]||0)+1;
-    setTimeout(()=>{
-      const a=document.querySelector(`.card[data-idx="${i}"]`);
-      const b=document.querySelector(`.card[data-idx="${j}"]`);
-      a.classList.add('error-anim');b.classList.add('error-anim');
-      setTimeout(()=>{
-        a.classList.remove('flipped','error-anim');
-        b.classList.remove('flipped','error-anim');
-        flipped=[];locked=false;
-        // After 3 wrong flips for this pair → shake all matching cards as hint
-        if(pairAttempts[pA]>=3){
-          cards.forEach((c,idx2)=>{
-            if(c.phraseIndex===pA && !matched.has(pA)){
-              const el=document.querySelector(`.card[data-idx="${idx2}"]`);
-              el.classList.add('hint-shake');
-              setTimeout(()=>el.classList.remove('hint-shake'),800);
-            }
-          });
-          pairAttempts[pA]=0; // reset so it can trigger again later
-        }
-      },420);
-    },700);
-  }
-}
-
-function showCorrectionModal(phraseIndex,cardI,cardJ){
-  const phrase=PHRASES[phraseIndex];
-  if(!attempts[phraseIndex])attempts[phraseIndex]=0;
-  const modal=document.getElementById('modal');
-  modal.innerHTML=`<div class="modal-handle"></div>
-    <div class="modal-icon">🎉 Par encontrado!</div>
-    <div class="modal-title">Corrija a frase para confirmar!</div>
-    <div class="wrong-phrase"><div class="wrong-phrase-label">❌ Frase com erro</div>"${phrase.wrong}"</div>
-    <div class="correction-area">
-      <div class="correction-label">✍️ Escreva a frase correta:</div>
-      <input type="text" class="correction-input" id="corrInput" placeholder="Digite a frase corrigida..." autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" inputmode="text">
-    </div>
-    <div class="modal-hint">💡 ${phrase.hint}</div>
-    <div class="feedback-msg" id="feedbackMsg"></div>
-    <div class="answer-reveal" id="answerReveal"><div class="answer-reveal-label">✅ Resposta correta</div>"${phrase.correct}"</div>
-    <div class="modal-actions">
-      <button class="btn btn-primary" id="checkBtn">Verificar ✔</button>
-      <button class="btn btn-secondary" id="skipBtn">Revelar 👁</button>
-    </div>`;
-  document.getElementById('checkBtn').addEventListener('click',()=>checkCorrection(phraseIndex,cardI,cardJ));
-  document.getElementById('skipBtn').addEventListener('click',()=>skipCorrection(phraseIndex,cardI,cardJ));
-  showOverlay();
-  setTimeout(()=>{
-    const inp=document.getElementById('corrInput');
-    if(inp){
-      // only auto-focus on non-touch devices to avoid keyboard jump
-      if(window.matchMedia('(hover:hover)').matches) inp.focus();
-      inp.addEventListener('keydown',e=>{if(e.key==='Enter')checkCorrection(phraseIndex,cardI,cardJ)});
-    }
-  },150);
-}
-
-function normalize(s){
-  return s.trim().toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'')
-    .replace(/\s+/g,' ');
-}
-
-function checkCorrection(phraseIndex,cardI,cardJ){
-  const inp=document.getElementById('corrInput');
-  const fb=document.getElementById('feedbackMsg');
-  const ar=document.getElementById('answerReveal');
-  const phrase=PHRASES[phraseIndex];
-  if(!inp.value.trim()){fb.textContent='Digite a frase antes de verificar!';fb.className='feedback-msg err';return;}
-  const uN=normalize(inp.value).replace(/[.,!?;:]/g,'');
-  const cN=normalize(phrase.correct).replace(/[.,!?;:]/g,'');
-  if(uN===cN){
-    inp.className='correction-input correct';
-    fb.textContent='✅ Parabéns! Correção perfeita!';fb.className='feedback-msg ok';
-    setTimeout(()=>confirmMatch(phraseIndex,cardI,cardJ),900);
-  } else {
-    attempts[phraseIndex]=(attempts[phraseIndex]||0)+1;
-    inp.className='correction-input wrong-input';
-    if(attempts[phraseIndex]>=MAX_WRONG){
-      fb.textContent='❌ Quase! Veja a resposta abaixo.';fb.className='feedback-msg err';
-      ar.classList.add('show');
-    } else {
-      const left=MAX_WRONG-attempts[phraseIndex];
-      fb.textContent=`❌ Não está certo. ${left} tentativa${left>1?'s':''} restante.`;fb.className='feedback-msg err';
-      setTimeout(()=>{inp.className='correction-input';inp.value='';inp.focus();},1100);
-    }
-  }
-}
-
-function skipCorrection(phraseIndex,cardI,cardJ){
-  document.getElementById('answerReveal').classList.add('show');
-  document.querySelector('.modal-actions').innerHTML=
-    `<button class="btn btn-success" id="contBtn">Entendi, continuar ▶</button>`;
-  document.getElementById('contBtn').addEventListener('click',()=>confirmMatch(phraseIndex,cardI,cardJ));
-}
-
-function confirmMatch(phraseIndex,cardI,cardJ){
-  matched.add(phraseIndex);flipped=[];locked=false;
-  hideOverlay();
-  document.querySelector(`.card[data-idx="${cardI}"]`).classList.add('matched');
-  document.querySelector(`.card[data-idx="${cardJ}"]`).classList.add('matched');
-  updateProgress();
-  if(matched.size===PHRASES.length){setTimeout(()=>showWinScreen(),500);launchConfetti();}
-}
-
-function updateProgress(){
-  const count=matched.size,total=PHRASES.length;
-  document.getElementById('pairsFound').textContent=count;
-  document.getElementById('progressFill').style.width=(count/total*100)+'%';
-  document.getElementById('progressLabel').textContent=`${count} de ${total} pares encontrados`;
-}
-
-function showWinScreen(){
-  const stars=moves<=20?'⭐⭐⭐':moves<=30?'⭐⭐':'⭐';
-  document.getElementById('modal').innerHTML=`<div class="modal-handle"></div>
-    <div class="win-screen">
-      <div class="win-stars">${stars}</div>
-      <div class="modal-title">Parabéns! 🏆</div>
-      <div class="win-score">Você completou em ${moves} jogadas!</div>
-      <div class="win-msg">Você praticou a correção gramatical de 15 frases. Continue evoluindo! 📚</div>
-      <div class="modal-actions"><button class="btn btn-primary" id="restartBtn">🔄 Jogar novamente</button></div>
-    </div>`;
-  document.getElementById('restartBtn').addEventListener('click',restartGame);
-  showOverlay();
-}
-
-function restartGame(){
-  matched=new Set();flipped=[];moves=0;locked=false;attempts={};pairAttempts={};
-  document.getElementById('movesCount').textContent='0';
-  document.getElementById('pairsFound').textContent='0';
-  document.getElementById('progressFill').style.width='0%';
-  document.getElementById('progressLabel').textContent='0 de 15 pares encontrados';
-  hideOverlay();renderBoard();
-}
-
-function launchConfetti(){
-  const emojis=['🎉','🎊','⭐','✨','🌟','📝','✅','🏆'];
-  for(let i=0;i<28;i++){
-    setTimeout(()=>{
-      const el=document.createElement('div');el.className='confetti';
-      el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-      el.style.cssText=`left:${Math.random()*100}vw;font-size:${1+Math.random()*1}rem;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.4}s`;
-      document.body.appendChild(el);setTimeout(()=>el.remove(),4000);
-    },i*55);
-  }
-}
-
-function showOverlay(){document.getElementById('overlay').classList.add('visible')}
-function hideOverlay(){document.getElementById('overlay').classList.remove('visible')}
-
-function showStartScreen(){
-  document.getElementById('modal').innerHTML=`<div class="modal-handle"></div>
-    <div class="start-screen">
-      <div class="start-big">🧩 Jogo da Memória<br>Gramática</div>
-      <div class="start-desc">Encontre os pares de cartas iguais e corrija o erro gramatical da frase para confirmar o ponto!</div>
-      <div class="start-rule">
-        <strong>Como jogar:</strong><br>
-        1. Toque em duas cartas para virá-las.<br>
-        2. Par encontrado 🎉? Corrija a frase errada.<br>
-        3. Acertou → par confirmado ✅<br>
-        4. Errou ${MAX_WRONG}x → resposta revelada automaticamente.
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="brand-badge">Q</div>
+        <h1>Certo ou Errado?</h1>
       </div>
-      <div class="modal-actions"><button class="btn btn-primary" id="startBtn">▶ Iniciar Jogo</button></div>
-    </div>`;
-  document.getElementById('startBtn').addEventListener('click',()=>{hideOverlay();renderBoard();});
-  showOverlay();
-}
+      <div class="score">⚡ <span class="score-val" id="scoreVal">0</span> pts</div>
+    </header>
 
-renderBoard();
-showStartScreen();
-</script>
+    <section class="hud">
+      <div class="hud-line">
+        <span id="progressTxt">0 / 30</span>
+        <span class="streak" id="streakTxt"></span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    </section>
+
+    <main class="arena">
+      <div class="hint-arrows" id="hintArrows">
+        <div class="hint-arrow">←</div>
+        <div class="hint-arrow">→</div>
+      </div>
+      <div class="card-stack" id="cardStack"></div>
+    </main>
+
+    <div class="actions">
+      <button class="btn btn-bad" id="btnBad">✖ Errado</button>
+      <button class="btn btn-ok" id="btnOk">✔ Certo</button>
+    </div>
+  </div>
+
+  <div class="flash" aria-hidden="true">
+    <div class="flash-icon" id="flashIcon"></div>
+  </div>
+
+  <div class="sheet-wrap" id="sheetWrap">
+    <div class="sheet">
+      <div class="handle"></div>
+      <h2 id="sheetTitle">Corrija para continuar</h2>
+      <p class="sub" id="sheetSub"></p>
+
+      <div class="wrong-box">
+        <small>Frase com erro</small>
+        <span id="wrongText"></span>
+      </div>
+
+      <div class="hint" id="hintText"></div>
+
+      <label class="label" for="corrInput">Escreva a frase corrigida</label>
+      <input id="corrInput" class="input" type="text" placeholder="Digite a correção..." autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false">
+      <div class="feedback" id="feedback"></div>
+
+      <div class="answer" id="answerBox">
+        <small>Resposta correta</small>
+        <span id="answerText"></span>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn-sheet btn-check" id="btnCheck">Verificar</button>
+        <button class="btn-sheet btn-reveal" id="btnReveal">Revelar</button>
+      </div>
+      <button class="btn-next" id="btnNext">Continuar</button>
+    </div>
+  </div>
+
+  <section class="screen" id="onboarding">
+    <div class="panel">
+      <div class="icon">🧠</div>
+      <h2>Certo ou Errado?</h2>
+      <p>Julgue frases com swipe, ganhe pontos e corrija quando errar. Fácil de jogar, difícil de dominar.</p>
+      <div class="rules">
+        <div class="rule-item">👉 Direita: frase está correta.</div>
+        <div class="rule-item">👈 Esquerda: frase tem erro gramatical.</div>
+        <div class="rule-item">✍ Se errar o julgamento, corrija a frase para continuar. 2 tentativas; na 3ª a resposta é revelada.</div>
+      </div>
+      <button class="start-btn" id="btnStart">Começar jogo</button>
+    </div>
+  </section>
+
+  <section class="screen hidden" id="resultScreen">
+    <div class="panel">
+      <div class="icon" id="resIcon">🏁</div>
+      <h2 id="resTitle">Fim de jogo</h2>
+      <p id="resText"></p>
+      <div class="results">
+        <div class="res g"><strong id="resHits">0</strong><span>Acertos</span></div>
+        <div class="res r"><strong id="resMiss">0</strong><span>Erros</span></div>
+        <div class="res y"><strong id="resScore">0</strong><span>Pontos</span></div>
+      </div>
+      <button class="restart-btn" id="btnRestart">Jogar novamente</button>
+    </div>
+  </section>
+
+  <script>
+    const PHRASES = [
+      { wrong: "As criança tá passando fome.", correct: "As crianças estão passando fome.", hint: "Concordância nominal e verbal no plural: 'crianças' e 'estão'." },
+      { wrong: "Nós não tem nada pra comer hoje.", correct: "Nós não temos nada para comer hoje.", hint: "Com 'nós', o verbo vai para 'temos'. Prefira 'para' em vez de 'pra' no registro formal." },
+      { wrong: "Eu peguei os papel pra vender.", correct: "Eu peguei os papéis para vender.", hint: "Plural irregular: 'papel' vira 'papéis'." },
+      { wrong: "Os homem da favela não trabalha.", correct: "Os homens da favela não trabalham.", hint: "Plural no sujeito exige plural no verbo: 'homens' e 'trabalham'." },
+      { wrong: "Fiquei com vontade de comer pão, mas não tinha.", correct: "Fiquei com vontade de comer pão, mas não havia.", hint: "Use 'haver' no sentido de existir: 'não havia'." },
+      { wrong: "A gente fomos no centro catar papel.", correct: "A gente foi ao centro catar papel.", hint: "'A gente' pede verbo na 3a pessoa do singular: 'foi'. Também use 'ao centro'." },
+      { wrong: "As coisa tá difícil aqui na favela.", correct: "As coisas estão difíceis aqui na favela.", hint: "Concordância completa no plural: 'coisas', 'estão', 'difíceis'." },
+      { wrong: "Eu não consegui arrumar comida pros meus filho.", correct: "Eu não consegui arrumar comida para os meus filhos.", hint: "Plural correto: 'filhos'. Forma expandida: 'para os'." },
+      { wrong: "Os menino tava tudo com fome.", correct: "Os meninos estavam todos com fome.", hint: "Sujeito no plural pede verbo no plural e ajuste de 'todos'." },
+      { wrong: "Eu vi eles brigando por causa de comida.", correct: "Eu os vi brigando por causa de comida.", hint: "Pronome obliquo em posicao de objeto direto: 'os'." },
+      { wrong: "Tem dia que nois não come nada.", correct: "Tem dia que nós não comemos nada.", hint: "Grafia correta: 'nós'. Concordância verbal: 'comemos'." },
+      { wrong: "Fui no mercado mas não comprei nada.", correct: "Fui ao mercado, mas não comprei nada.", hint: "Regência verbal: 'ir a' -> 'ao mercado'; use virgula antes de 'mas'." },
+      { wrong: "Ela falou que não vai mais me ajudar.", correct: "Ela disse que não vai mais me ajudar.", hint: "Em registro mais formal, prefira 'disse' nesse contexto." },
+      { wrong: "Os vizinho fica brigando o tempo todo.", correct: "Os vizinhos ficam brigando o tempo todo.", hint: "Concordância de numero: 'vizinhos' e 'ficam'." },
+      { wrong: "Eu queria que meus filho tivesse uma vida melhor.", correct: "Eu queria que meus filhos tivessem uma vida melhor.", hint: "Com 'filhos', use subjuntivo no plural: 'tivessem'." }
+    ];
+
+    const ge = (id) => document.getElementById(id);
+
+    const state = {
+      deck: [],
+      index: 0,
+      score: 0,
+      streak: 0,
+      hits: 0,
+      misses: 0,
+      lock: false,
+      correctionAttempts: 0
+    };
+
+    const scoreVal = ge("scoreVal");
+    const progressTxt = ge("progressTxt");
+    const barFill = ge("barFill");
+    const streakTxt = ge("streakTxt");
+    const cardStack = ge("cardStack");
+    const hintArrows = ge("hintArrows");
+    const flashIcon = ge("flashIcon");
+
+    const sheetWrap = ge("sheetWrap");
+    const sheetTitle = ge("sheetTitle");
+    const sheetSub = ge("sheetSub");
+    const wrongText = ge("wrongText");
+    const hintText = ge("hintText");
+    const corrInput = ge("corrInput");
+    const feedback = ge("feedback");
+    const answerBox = ge("answerBox");
+    const answerText = ge("answerText");
+    const btnCheck = ge("btnCheck");
+    const btnReveal = ge("btnReveal");
+    const btnNext = ge("btnNext");
+
+    const onboarding = ge("onboarding");
+    const resultScreen = ge("resultScreen");
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function buildDeck() {
+      const rounds = [];
+      PHRASES.forEach((p, i) => {
+        rounds.push(
+          {
+            id: `${i}-w`,
+            shown: p.wrong,
+            isCorrect: false,
+            base: p
+          },
+          {
+            id: `${i}-c`,
+            shown: p.correct,
+            isCorrect: true,
+            base: p
+          }
+        );
+      });
+      return shuffle(rounds);
+    }
+
+    function normalize(text) {
+      return text
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replaceAll(/[\u0300-\u036f]/g, "")
+        .replaceAll(/[.,!?;:]/g, "")
+        .replaceAll(/\s+/g, " ");
+    }
+
+    function updateHUD() {
+      progressTxt.textContent = `${state.index} / ${state.deck.length}`;
+      barFill.style.width = `${(state.index / state.deck.length) * 100}%`;
+      streakTxt.textContent = state.streak >= 3 ? `🔥 x2 ativo (${state.streak} seguidos)` : "";
+    }
+
+    function bumpScore() {
+      scoreVal.classList.remove("bump");
+      scoreVal.getBoundingClientRect();
+      scoreVal.classList.add("bump");
+    }
+
+    function addPoints(basePoints) {
+      const factor = state.streak >= 3 ? 2 : 1;
+      state.score += basePoints * factor;
+      scoreVal.textContent = String(state.score);
+      bumpScore();
+    }
+
+    function showFlash(ok) {
+      flashIcon.textContent = ok ? "✅" : "❌";
+      flashIcon.className = "flash-icon";
+      flashIcon.getBoundingClientRect();
+      flashIcon.className = `flash-icon ${ok ? "ok" : "bad"}`;
+    }
+
+    function currentRound() {
+      return state.deck[state.index];
+    }
+
+    function renderCard() {
+      cardStack.innerHTML = "";
+      const item = currentRound();
+      if (!item) {
+        finishGame();
+        return;
+      }
+
+      const card = document.createElement("article");
+      card.className = "card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-label", "Frase do quiz, use seta esquerda ou direita");
+
+      card.innerHTML = `
+        <div class="badge badge-left">Errado</div>
+        <div class="badge badge-right">Certo</div>
+        <div class="tag-row">
+          <span>Frase ${state.index + 1} de ${state.deck.length}</span>
+          <span class="chip">Swipe Quiz</span>
+        </div>
+        <p class="phrase">"${item.shown}"</p>
+        <div class="direction">
+          <span>← Erro gramatical</span>
+          <span>Correta →</span>
+        </div>
+      `;
+
+      cardStack.appendChild(card);
+      setupSwipe(card, item);
+
+      card.addEventListener("keydown", (e) => {
+        if (state.lock) return;
+        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+          judge(false, card);
+        }
+        if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+          judge(true, card);
+        }
+      });
+    }
+
+    function animateOut(card, toRight) {
+      const dir = toRight ? 1 : -1;
+      card.style.transition = "transform 320ms cubic-bezier(0.2,0.9,0.2,1), opacity 320ms ease";
+      card.style.transform = `translateX(${dir * (window.innerWidth + 180)}px) rotate(${dir * 16}deg)`;
+      card.style.opacity = "0";
+    }
+
+    function nextRound() {
+      state.index += 1;
+      updateHUD();
+      renderCard();
+    }
+
+    function judge(playerSaysCorrect, card) {
+      if (state.lock) return;
+      const item = currentRound();
+      if (!item) return;
+
+      state.lock = true;
+      const hit = playerSaysCorrect === item.isCorrect;
+      animateOut(card, playerSaysCorrect);
+      showFlash(hit);
+
+      if (hit) {
+        state.hits += 1;
+        state.streak += 1;
+        addPoints(10);
+
+        setTimeout(() => {
+          state.lock = false;
+          nextRound();
+        }, 340);
+      } else {
+        state.misses += 1;
+        state.streak = 0;
+        scoreVal.textContent = String(state.score);
+
+        setTimeout(() => {
+          state.lock = false;
+          openCorrection(item);
+        }, 300);
+      }
+      updateHUD();
+    }
+
+    function setupSwipe(card, item) {
+      let active = false;
+      let startX = 0;
+      let dragX = 0;
+
+      const threshold = () => Math.max(92, window.innerWidth * 0.24);
+
+      function onStart(e) {
+        if (state.lock) return;
+        active = true;
+        startX = e.clientX;
+        dragX = 0;
+        card.setPointerCapture(e.pointerId);
+      }
+
+      function onMove(e) {
+        if (!active || state.lock) return;
+        dragX = e.clientX - startX;
+        const rot = dragX * 0.06;
+
+        card.style.transition = "none";
+        card.style.transform = `translateX(${dragX}px) rotate(${rot}deg)`;
+
+        card.classList.toggle("show-right", dragX > 45);
+        card.classList.toggle("show-left", dragX < -45);
+        card.classList.toggle("ok-tilt", dragX > 45);
+        card.classList.toggle("bad-tilt", dragX < -45);
+
+        if (Math.abs(dragX) < 45) {
+          card.classList.remove("ok-tilt", "bad-tilt", "show-right", "show-left");
+        }
+      }
+
+      function onEnd() {
+        if (!active || state.lock) return;
+        active = false;
+
+        if (Math.abs(dragX) >= threshold()) {
+          judge(dragX > 0, card);
+          return;
+        }
+
+        card.style.transition = "transform 260ms cubic-bezier(0.2,0.9,0.2,1), box-shadow 200ms ease";
+        card.style.transform = "translateX(0) rotate(0deg)";
+        card.classList.remove("ok-tilt", "bad-tilt", "show-right", "show-left");
+      }
+
+      card.addEventListener("pointerdown", onStart);
+      card.addEventListener("pointermove", onMove);
+      card.addEventListener("pointerup", onEnd);
+      card.addEventListener("pointercancel", onEnd);
+      card.addEventListener("pointerleave", () => {
+        if (active && !state.lock) onEnd();
+      });
+    }
+
+    function openCorrection(item) {
+      state.correctionAttempts = 0;
+      sheetTitle.textContent = "Errou o julgamento";
+      sheetSub.textContent = item.isCorrect
+        ? "A frase estava correta. Reescreva corretamente para continuar."
+        : "A frase tinha erro. Reescreva a versão corrigida para continuar.";
+
+      wrongText.textContent = `"${item.base.wrong}"`;
+      hintText.textContent = `Dica: ${item.base.hint}`;
+      answerText.textContent = `"${item.base.correct}"`;
+
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      corrInput.className = "input";
+      corrInput.value = "";
+
+      answerBox.classList.remove("show");
+      btnNext.classList.remove("show");
+      btnCheck.style.display = "";
+      btnReveal.style.display = "";
+      corrInput.disabled = false;
+
+      sheetWrap.classList.add("open");
+      if (globalThis.matchMedia("(hover:hover)").matches) {
+        setTimeout(() => corrInput.focus(), 120);
+      }
+    }
+
+    function revealAnswer(autoReveal) {
+      answerBox.classList.add("show");
+      corrInput.disabled = true;
+      btnCheck.style.display = "none";
+      btnReveal.style.display = "none";
+      btnNext.classList.add("show");
+      if (autoReveal) {
+        feedback.textContent = "Resposta revelada automaticamente na 3a tentativa.";
+        feedback.className = "feedback err";
+      }
+    }
+
+    function checkCorrection() {
+      const item = currentRound();
+      if (!item) return;
+
+      const value = corrInput.value.trim();
+      if (!value) {
+        feedback.textContent = "Digite a frase antes de verificar.";
+        feedback.className = "feedback err";
+        return;
+      }
+
+      const ok = normalize(value) === normalize(item.base.correct);
+
+      if (ok) {
+        corrInput.className = "input good";
+        feedback.textContent = "Correção certa! +5 pontos.";
+        feedback.className = "feedback ok";
+        addPoints(5);
+
+        btnCheck.style.display = "none";
+        btnReveal.style.display = "none";
+        btnNext.classList.add("show");
+        corrInput.disabled = true;
+        return;
+      }
+
+      state.correctionAttempts += 1;
+      corrInput.className = "input bad";
+
+      if (state.correctionAttempts >= 3) {
+        revealAnswer(true);
+        return;
+      }
+
+      if (state.correctionAttempts === 1) {
+        feedback.textContent = "Ainda nao. Tentativas restantes: 2.";
+      } else {
+        feedback.textContent = "Ainda nao. Na proxima, a resposta sera revelada automaticamente.";
+      }
+      feedback.className = "feedback err";
+
+      setTimeout(() => {
+        if (corrInput.disabled) return;
+        corrInput.className = "input";
+        corrInput.value = "";
+        corrInput.focus();
+      }, 900);
+    }
+
+    function closeCorrectionAndContinue() {
+      sheetWrap.classList.remove("open");
+      setTimeout(() => {
+        nextRound();
+      }, 180);
+    }
+
+    function finishGame() {
+      const total = state.deck.length || 1;
+      const pct = Math.round((state.hits / total) * 100);
+
+      ge("resHits").textContent = String(state.hits);
+      ge("resMiss").textContent = String(state.misses);
+      ge("resScore").textContent = String(state.score);
+
+      const title = ge("resTitle");
+      const text = ge("resText");
+      const icon = ge("resIcon");
+
+      if (pct >= 85) {
+        icon.textContent = "🏆";
+        title.textContent = "Brabo na gramática";
+      } else if (pct >= 65) {
+        icon.textContent = "🎉";
+        title.textContent = "Mandou bem";
+      } else if (pct >= 45) {
+        icon.textContent = "💪";
+        title.textContent = "Quase lá";
+      } else {
+        icon.textContent = "📘";
+        title.textContent = "Bora praticar";
+      }
+
+      text.textContent = `${pct}% de acertos no julgamento. Pontuação final: ${state.score} pts.`;
+      resultScreen.classList.remove("hidden");
+    }
+
+    function startGame() {
+      state.deck = buildDeck();
+      state.index = 0;
+      state.score = 0;
+      state.streak = 0;
+      state.hits = 0;
+      state.misses = 0;
+      state.lock = false;
+      state.correctionAttempts = 0;
+
+      scoreVal.textContent = "0";
+      updateHUD();
+      renderCard();
+
+      hintArrows.classList.add("show");
+      setTimeout(() => hintArrows.classList.remove("show"), 2300);
+    }
+
+    ge("btnStart").addEventListener("click", () => {
+      onboarding.classList.add("hidden");
+      startGame();
+    });
+
+    ge("btnRestart").addEventListener("click", () => {
+      resultScreen.classList.add("hidden");
+      startGame();
+    });
+
+    ge("btnBad").addEventListener("click", () => {
+      if (state.lock) return;
+      const card = cardStack.querySelector(".card");
+      if (card) judge(false, card);
+    });
+
+    ge("btnOk").addEventListener("click", () => {
+      if (state.lock) return;
+      const card = cardStack.querySelector(".card");
+      if (card) judge(true, card);
+    });
+
+    btnCheck.addEventListener("click", checkCorrection);
+    btnReveal.addEventListener("click", () => revealAnswer(false));
+    btnNext.addEventListener("click", closeCorrectionAndContinue);
+    corrInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") checkCorrection();
+    });
+
+    sheetWrap.addEventListener("click", (e) => {
+      if (e.target === sheetWrap) {
+        e.preventDefault();
+      }
+    });
+  </script>
 </body>
 </html>
