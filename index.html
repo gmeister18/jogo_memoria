@@ -819,12 +819,12 @@
 
     <section class="hud">
       <div class="hud-line">
-        <span id="progressTxt">0 / 10</span>
+        <span id="progressTxt">0 / 5</span>
         <span class="streak" id="streakTxt"></span>
       </div>
       <div class="bar"><div class="bar-fill" id="barFill"></div></div>
       <div class="hud-gamify">
-        <span class="mission">Missão: 10 frases</span>
+        <span class="mission">Missão: 5 frases</span>
         <div class="combo">Combo
           <div class="combo-track"><div class="combo-fill" id="comboFill"></div></div>
         </div>
@@ -883,7 +883,7 @@
     <div class="panel">
       <div class="icon">🧠</div>
       <h2>Certo ou Errado?</h2>
-      <p>Julgue frases com swipe, some pontos e complete a missão de 10 frases sorteadas.</p>
+      <p>Julgue frases com swipe, some pontos e complete a missão de 5 frases sorteadas.</p>
       <div class="rules">
         <div class="rule-item">👉 Direita: frase está correta.</div>
         <div class="rule-item">👈 Esquerda: frase tem erro gramatical.</div>
@@ -939,7 +939,7 @@
       correctionAttempts: 0
     };
 
-    const TOTAL_ROUNDS = 10;
+    const TOTAL_ROUNDS = 5;
 
     const scoreVal = ge("scoreVal");
     const levelBadge = ge("levelBadge");
